@@ -27,7 +27,20 @@ type
     EOTA_SFS = 0x71
     Ext1 = 0x81 # Minix File System
     SwapForLinux = 0x82 # Before Solaris 10
-
+    FSForLinux = 0x83 # like ext2 etc
+    LinuxExtendedArea = 0x85
+    SuspendedArea = 0xA0
+    FreeBSD_UFS = 0xA5 # FFS/UFS1/UFS2
+    OpenBSD_UFS = 0xA6
+    NetBSD_UFS = 0xA9
+    BootPartitionForSolaris = 0xBE
+    FSForSolaris = 0xBF
+    DR_DOS_FS1 = 0xC1
+    DR_DOS_FS2 = 0xC4
+    DR_DOS_FS_GT_32MB = 0xC6
+    FSForBeOS = 0xEB
+    GPT = 0xEE
+    EFISystemPartition = 0xEF
 
 
 
