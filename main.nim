@@ -2,7 +2,8 @@ import os
 import posix
 import strutils
 
-import modules/mbr
+import modules/mbr/mbr
+import modules/mbr/mbr_utils
 import utils
 
 proc main() =
@@ -23,8 +24,7 @@ proc main() =
   if readCount < 0:
     exitWithErrorMsg("failed to read file")
 
-  let mbRecord = toMBR(sectorData)
-  echo hex(uint8(mbRecord.partitionTable1.bootFlag), true)
-
+  let mbRecord = toMasterBootRecord(sectorData)
+  displaySectorCHS(mbRecord.partitionTable1.firstSectorCHS)
 
 main()

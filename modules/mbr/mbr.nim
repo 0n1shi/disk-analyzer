@@ -77,7 +77,7 @@ let
 const BootStrapCodeSize* = 446
 type BootStrapCode* = array[BootStrapCodeSize, uint8]
 
-type MBR* = object
+type MasterBootRecord* = object
     code*: BootStrapCode
     partitionTable1*: PartitionTable
     partitionTable2*: PartitionTable
@@ -115,13 +115,13 @@ proc toPartitionTable*(data: seq[uint8]): PartitionTable =
     firstSectorLBA: firstSectorLBA,
   )
 
-proc toMBR*(data: sector): MBR =
+proc toMasterBootRecord*(data: sector): MasterBootRecord =
   let code: BootStrapCode = toSectorCode(data[0..BootStrapCodeSize - 1])
   let table1: PartitionTable = toPartitionTable(data[Partition1Index..(EndOfPartition1)])
   let table2: PartitionTable = toPartitionTable(data[Partition2Index..(EndOfPartition2)])
   let table3: PartitionTable = toPartitionTable(data[Partition3Index..(EndOfPartition3)])
   let table4: PartitionTable = toPartitionTable(data[Partition4Index..(EndOfPartition4)])
-  return MBR(
+  return MasterBootRecord(
     code: code,
     partitionTable1: table1,
     partitionTable2: table2,
