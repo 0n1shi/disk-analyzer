@@ -26,6 +26,5 @@ proc main() =
 
   let mbRecord = toMasterBootRecord(sectorData)
   displayMasterBootRecord(mbRecord)
-  displaySectorCHS(mbRecord.partitionTable1.firstSectorCHS, "First Sector (CHS)")
 
 main()

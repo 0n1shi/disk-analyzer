@@ -1,4 +1,5 @@
 import tables
+import strutils
 
 const SECTOR_SIZE* = 512
 type sector* = array[SECTOR_SIZE, uint8]
@@ -47,46 +48,248 @@ type
     GPT                     = 0xEE
     EFISystemPartition      = 0xEF
 
-const PartitionTypesStr* = {
-  0x00: "Empty                  ",
-  0x01: "FAT12                  ",
-  0x04: "FAT16_LE32MB           ",
-  0x05: "ExtendedDOSArea        ",
-  0x06: "FAT16_GT32MB           ",
-  0x07: "HPFS_NTFS_exFAT        ",
-  0x0B: "FAT32                  ",
-  0x0C: "FAT32_LBA              ",
-  0x0E: "FAT16_LBA              ",
-  0x0F: "ExtendedDOSArea_LBA    ",
-  0x11: "FAT12                  ",
-  0x13: "BTRON3_FS              ",
-  0x14: "FAT16_LE32MB           ",
-  0x15: "ExtendedDOSArea        ",
-  0x16: "FAT16_GT32MB           ",
-  0x17: "HPFS_NTFS_exFAT        ",
-  0x1B: "FAT32                  ",
-  0x1C: "FAT32_LBA              ",
-  0x1E: "FAT16_LBA              ",
-  0x1F: "ExtendedDOSArea_LBA    ",
-  0x39: "Plan9FS                ",
-  0x71: "EOTA_SFS               ",
-  0x81: "Ext1                   ", # Minix File System
-  0x82: "SwapForLinux           ", # Before Solaris 10
-  0x83: "FSForLinux             ", # like ext2 etc
-  0x85: "LinuxExtendedArea      ",
-  0xA0: "SuspendedArea          ",
-  0xA5: "FreeBSD_UFS            ", # FFS/UFS1/UFS2
-  0xA6: "OpenBSD_UFS            ",
-  0xA9: "NetBSD_UFS             ",
-  0xBE: "BootPartitionForSolaris",
-  0xBF: "FSForSolaris           ",
-  0xC1: "DR_DOS_FS1             ",
-  0xC4: "DR_DOS_FS2             ",
-  0xC6: "DR_DOS_FS_GT_32MB      ",
-  0xEB: "FSForBeOS              ",
-  0xEE: "GPT                    ",
-  0xEF: "EFISystemPartition     ",
-}.toTable
+const PartitionTypesStr* = [
+  "Empty",
+  "FAT12",
+  "",
+  "",
+  "FAT16 lt 32MB",
+  "Extended DOS area",
+  "FAT16 gt 32MB",
+  "HPFS/NTFS/exFAT",
+  "",
+  "",
+  "",
+  "FAT32",
+  "FAT32 LBA",
+  "",
+  "FAT16 LBA",
+  "Extended DOS area LBA",
+  "",
+  "FAT12",
+  "",
+  "BTRON3 FS",
+  "FAT16 lt 32MB",
+  "Extended DOS area",
+  "FAT16 gt 32MB",
+  "HPFS/NTFS/exFAT",
+  "",
+  "",
+  "",
+  "FAT32",
+  "FAT32 LBA",
+  "",
+  "FAT16 LBA",
+  "Extended DOS area LBA",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "Plan9 FS",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "EOTA SFS",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "Minix file system", # Minix File System
+  "Swap area for Linux", # Before Solaris 10
+  "FS For Linux", # like ext2 etc
+  "",
+  "Linux extended area",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "Suspended area",
+  "",
+  "",
+  "",
+  "",
+  "FreeBSD UFS", # FFS/UFS1/UFS2
+  "OpenBSD_UFS",
+  "",
+  "",
+  "NetBSD UFS",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "Boot partition for Solaris",
+  "FS for Solaris",
+  "",
+  "DR DOS FS1",
+  "",
+  "",
+  "DR DOS FS2",
+  "",
+  "DR DOS FS gt 32MB",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "FS for BeOS",
+  "",
+  "",
+  "GPT",
+  "EFI System Partition",
+]
 
 const PartitionTypeStrings: seq[string] = @[
   "Empty", "FAT12", "FAT16 less than 32MB", "unknown", ""
@@ -124,13 +327,15 @@ let
 const BootStrapCodeSize* = 446
 type BootStrapCode* = array[BootStrapCodeSize, uint8]
 
+type BootSignature* = array[2, uint8]
+
 type MasterBootRecord* = object
     code*: BootStrapCode
     partitionTable1*: PartitionTable
     partitionTable2*: PartitionTable
     partitionTable3*: PartitionTable
     partitionTable4*: PartitionTable
-    bootSignature*: uint16
+    bootSignature*: BootSignature
 
 proc toSectorCode*(data: seq[uint8]): BootStrapCode =
   var code: BootStrapCode
@@ -152,27 +357,36 @@ proc toPartitionTable*(data: seq[uint8]): PartitionTable =
     cylinderUpper2bit_sector6bit: data[0x06],
     cylinderLower8bit: data[0x07]
   )
-  let firstSectorLBA = cast[SectorLBA](data[0x08..0xB])
-
+  let firstSectorLBA =
+    (uint32(data[0x08]) shl 0) or
+    (uint32(data[0x09]) shl 8) or
+    (uint32(data[0x0A]) shl 16) or
+    (uint32(data[0x0B]) shl 24)
+  let sectorCount = 
+    (uint32(data[0x0C]) shl 0) or
+    (uint32(data[0x0D]) shl 8) or
+    (uint32(data[0x0E]) shl 16) or
+    (uint32(data[0x0F]) shl 24)
   return PartitionTable(
     bootFlag: bootFlag,
     firstSectorCHS: firstSectorCHS,
     partitionType: partitionType,
     lastSectorCHS: lastSectorCHS,
     firstSectorLBA: firstSectorLBA,
+    sectorCount: sectorCount
   )
 
 proc toMasterBootRecord*(data: sector): MasterBootRecord =
   let code: BootStrapCode = toSectorCode(data[0..BootStrapCodeSize - 1])
-  let table1: PartitionTable = toPartitionTable(data[Partition1Index..(EndOfPartition1)])
-  let table2: PartitionTable = toPartitionTable(data[Partition2Index..(EndOfPartition2)])
-  let table3: PartitionTable = toPartitionTable(data[Partition3Index..(EndOfPartition3)])
-  let table4: PartitionTable = toPartitionTable(data[Partition4Index..(EndOfPartition4)])
+  let table1: PartitionTable = toPartitionTable(data[Partition1Index..EndOfPartition1])
+  let table2: PartitionTable = toPartitionTable(data[Partition2Index..EndOfPartition2])
+  let table3: PartitionTable = toPartitionTable(data[Partition3Index..EndOfPartition3])
+  let table4: PartitionTable = toPartitionTable(data[Partition4Index..EndOfPartition4])
   return MasterBootRecord(
     code: code,
     partitionTable1: table1,
     partitionTable2: table2,
     partitionTable3: table3,
     partitionTable4: table4,
-    bootSignature: cast[uint16](data[0x01FE..0x01FF]),
+    bootSignature: BootSignature([data[0x01FE], data[0x01FF]]),
   )
