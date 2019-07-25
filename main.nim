@@ -25,6 +25,7 @@ proc main() =
     exitWithErrorMsg("failed to read file")
 
   let mbRecord = toMasterBootRecord(sectorData)
-  displaySectorCHS(mbRecord.partitionTable1.firstSectorCHS)
+  displayMasterBootRecord(mbRecord)
+  displaySectorCHS(mbRecord.partitionTable1.firstSectorCHS, "First Sector (CHS)")
 
 main()

@@ -1,3 +1,5 @@
+import tables
+
 const SECTOR_SIZE* = 512
 type sector* = array[SECTOR_SIZE, uint8]
 
@@ -45,12 +47,57 @@ type
     GPT                     = 0xEE
     EFISystemPartition      = 0xEF
 
+const PartitionTypesStr* = {
+  0x00: "Empty                  ",
+  0x01: "FAT12                  ",
+  0x04: "FAT16_LE32MB           ",
+  0x05: "ExtendedDOSArea        ",
+  0x06: "FAT16_GT32MB           ",
+  0x07: "HPFS_NTFS_exFAT        ",
+  0x0B: "FAT32                  ",
+  0x0C: "FAT32_LBA              ",
+  0x0E: "FAT16_LBA              ",
+  0x0F: "ExtendedDOSArea_LBA    ",
+  0x11: "FAT12                  ",
+  0x13: "BTRON3_FS              ",
+  0x14: "FAT16_LE32MB           ",
+  0x15: "ExtendedDOSArea        ",
+  0x16: "FAT16_GT32MB           ",
+  0x17: "HPFS_NTFS_exFAT        ",
+  0x1B: "FAT32                  ",
+  0x1C: "FAT32_LBA              ",
+  0x1E: "FAT16_LBA              ",
+  0x1F: "ExtendedDOSArea_LBA    ",
+  0x39: "Plan9FS                ",
+  0x71: "EOTA_SFS               ",
+  0x81: "Ext1                   ", # Minix File System
+  0x82: "SwapForLinux           ", # Before Solaris 10
+  0x83: "FSForLinux             ", # like ext2 etc
+  0x85: "LinuxExtendedArea      ",
+  0xA0: "SuspendedArea          ",
+  0xA5: "FreeBSD_UFS            ", # FFS/UFS1/UFS2
+  0xA6: "OpenBSD_UFS            ",
+  0xA9: "NetBSD_UFS             ",
+  0xBE: "BootPartitionForSolaris",
+  0xBF: "FSForSolaris           ",
+  0xC1: "DR_DOS_FS1             ",
+  0xC4: "DR_DOS_FS2             ",
+  0xC6: "DR_DOS_FS_GT_32MB      ",
+  0xEB: "FSForBeOS              ",
+  0xEE: "GPT                    ",
+  0xEF: "EFISystemPartition     ",
+}.toTable
+
+const PartitionTypeStrings: seq[string] = @[
+  "Empty", "FAT12", "FAT16 less than 32MB", "unknown", ""
+]
+
 type SectorCHS* = object
   head*                          : uint8
   cylinderUpper2bit_sector6bit*  : uint8
   cylinderLower8bit*             : uint8
 
-type SectorLBA = uint32
+type SectorLBA* = uint32
 
 type PartitionTable* = object
   bootFlag*       : PartitionBootFlags
