@@ -2,8 +2,8 @@ import os
 import posix
 import strutils
 
-import modules/mbr/mbr
-import modules/mbr/mbr_utils
+import lib/mbr/mbr
+import lib/mbr/mbr_utils
 import utils
 
 proc main() =
@@ -23,6 +23,7 @@ proc main() =
   if readCount < 0:
     exitWithErrorMsg("failed to read file")
 
+  # show information of Master Boot Record
   let mbRecord = toMasterBootRecord(sectorData)
   displayMasterBootRecord(mbRecord)
 

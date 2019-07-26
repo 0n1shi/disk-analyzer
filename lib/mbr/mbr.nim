@@ -386,3 +386,6 @@ proc toMasterBootRecord*(data: sector): MasterBootRecord =
     partitionTable4: table4,
     bootSignature: BootSignature([data[0x01FE], data[0x01FF]]),
   )
+
+proc isInvalidPartition*(t: PartitionTable): bool =
+  return if t.sectorCount == 0: true else: false
