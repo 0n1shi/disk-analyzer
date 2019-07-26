@@ -56,7 +56,7 @@ const PartitionTypesStr* = [
   "FAT16 lt 32MB",
   "Extended DOS area",
   "FAT16 gt 32MB",
-  "HPFS/NTFS/exFAT",
+  "HPFS or NTFS or exFAT",
   "unknown",
   "unknown",
   "unknown",
@@ -72,7 +72,7 @@ const PartitionTypesStr* = [
   "FAT16 lt 32MB",
   "Extended DOS area",
   "FAT16 gt 32MB",
-  "HPFS/NTFS/exFAT",
+  "HPFS or NTFS or exFAT",
   "unknown",
   "unknown",
   "unknown",
@@ -106,7 +106,7 @@ const PartitionTypesStr* = [
   "unknown",
   "unknown",
   "unknown",
-  "Plan9 FS",
+  "File System for Plan9",
   "unknown",
   "unknown",
   "unknown",
@@ -180,7 +180,7 @@ const PartitionTypesStr* = [
   "unknown",
   "Minix file system", # Minix File System
   "Swap area for Linux", # Before Solaris 10
-  "FS For Linux", # like ext2 etc
+  "File System For Linux", # like ext2 etc
   "unknown",
   "Linux extended area",
   "unknown",
@@ -214,11 +214,11 @@ const PartitionTypesStr* = [
   "unknown",
   "unknown",
   "unknown",
-  "FreeBSD UFS", # FFS/UFS1/UFS2
-  "OpenBSD_UFS",
+  "FreeBSD Unix File System", # FFS/UFS1/UFS2
+  "OpenBSD Unix File System",
   "unknown",
   "unknown",
-  "NetBSD UFS",
+  "NetBSD Unix File System",
   "unknown",
   "unknown",
   "unknown",
@@ -240,7 +240,7 @@ const PartitionTypesStr* = [
   "unknown",
   "unknown",
   "Boot partition for Solaris",
-  "FS for Solaris",
+  "File System for Solaris",
   "unknown",
   "DR DOS FS1",
   "unknown",
@@ -284,7 +284,7 @@ const PartitionTypesStr* = [
   "unknown",
   "unknown",
   "unknown",
-  "FS for BeOS",
+  "File System for BeOS",
   "unknown",
   "unknown",
   "GPT",

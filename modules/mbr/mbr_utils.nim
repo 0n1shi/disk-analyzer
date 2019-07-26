@@ -19,16 +19,16 @@ proc displaySectorCHS(s: SectorCHS, headerStr: string) =
   echo "    sector: " & $sector
 
 proc displaySectorLBA(s: SectorLBA, headerStr: string) =
-  echo "  " & headerStr & int(s).toHex(2) & "(" & $s & ")"
+  echo "  " & headerStr & "0x" & int(s).toHex(8) & "(" & $s & ")"
 
 proc displayPartitionType(t: PartitionTypes) =
   echo "  partition type: " & int(t).toHex(2) & "(" & PartitionTypesStr[uint8(t)] & ")"
 
 proc displaySectorCount(c: uint32) =
-  echo "  sector count: " & $c
+  echo "  sector count: " & $c & "(" & $(c * 512) & " bytes)"
 
 proc displayPartionTable(t: PartitionTable, headerStr: string) =
-  if uint8(t.bootFlag) == 0:
+  if t.sectorCount == 0:
     return
   echo headerStr
   displayPartitionBootFlag(t.bootFlag)
