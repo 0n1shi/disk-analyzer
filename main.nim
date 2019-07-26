@@ -19,8 +19,7 @@ proc main() =
   
   # read first sector
   var sectorData: sector
-  let sdPtr: ptr sector = sectorData.addr
-  let readCount: int = read(fd, sdPtr, SECTOR_SIZE)
+  let readCount: int = read(fd, sectorData.addr, SECTOR_SIZE)
   if readCount < 0:
     exitWithErrorMsg("failed to read file")
 
