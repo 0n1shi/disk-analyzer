@@ -25,7 +25,7 @@ proc displayPartitionType(t: PartitionTypes) =
   echo "  partition type: " & int(t).toHex(2) & "(" & PartitionTypesStr[uint8(t)] & ")"
 
 proc displaySectorCount(c: uint32) =
-  echo "  sector count: " & $c & "(" & $(c * 512) & " bytes)"
+  echo "  sector count: " & $c & "(" & $(uint64(c) * 512) & " bytes)"
 
 proc displayPartionTable(t: PartitionTable, headerStr: string) =
   if t.sectorCount == 0:
