@@ -325,7 +325,7 @@ type BootStrapCode* = array[BootStrapCodeSize, uint8]
 
 type BootSignature* = array[2, uint8]
 
-type MasterBootRecord* = object
+type MasterBootRecord* {.packed.} = object
     code*: BootStrapCode
     partitionTable1*: PartitionTable
     partitionTable2*: PartitionTable
@@ -333,59 +333,8 @@ type MasterBootRecord* = object
     partitionTable4*: PartitionTable
     bootSignature*: BootSignature
 
-proc toSectorCode*(data: seq[uint8]): BootStrapCode =
-  var code: BootStrapCode
-  let bootStrapCodeSize = sizeof(BootStrapCode)
-  for i in 0..<bootStrapCodeSize:
-    code[i] = data[i]
-  return code
+proc isValidPartition*(t: PartitionTable): bool =
+  return if t.sectorCount != 0: true else: false
 
-proc toPartitionTable*(data: seq[uint8]): PartitionTable =
-  let bootFlag = PartitionBootFlags(data[0])
-  let firstSectorCHS = SectorCHS(
-    head: data[0x01],
-    cylinderUpper2bit_sector6bit: data[0x02],
-    cylinderLower8bit: data[0x03]
-  )
-  let partitionType = PartitionTypes(data[0x04])
-  let lastSectorCHS = SectorCHS(
-    head: data[0x05],
-    cylinderUpper2bit_sector6bit: data[0x06],
-    cylinderLower8bit: data[0x07]
-  )
-  let firstSectorLBA =
-    (uint32(data[0x08]) shl 0) or
-    (uint32(data[0x09]) shl 8) or
-    (uint32(data[0x0A]) shl 16) or
-    (uint32(data[0x0B]) shl 24)
-  let sectorCount = 
-    (uint32(data[0x0C]) shl 0) or
-    (uint32(data[0x0D]) shl 8) or
-    (uint32(data[0x0E]) shl 16) or
-    (uint32(data[0x0F]) shl 24)
-  return PartitionTable(
-    bootFlag: bootFlag,
-    firstSectorCHS: firstSectorCHS,
-    partitionType: partitionType,
-    lastSectorCHS: lastSectorCHS,
-    firstSectorLBA: firstSectorLBA,
-    sectorCount: sectorCount
-  )
-
-proc toMasterBootRecord*(data: sector): MasterBootRecord =
-  let code: BootStrapCode = toSectorCode(data[0..BootStrapCodeSize - 1])
-  let table1: PartitionTable = toPartitionTable(data[Partition1Index..EndOfPartition1])
-  let table2: PartitionTable = toPartitionTable(data[Partition2Index..EndOfPartition2])
-  let table3: PartitionTable = toPartitionTable(data[Partition3Index..EndOfPartition3])
-  let table4: PartitionTable = toPartitionTable(data[Partition4Index..EndOfPartition4])
-  return MasterBootRecord(
-    code: code,
-    partitionTable1: table1,
-    partitionTable2: table2,
-    partitionTable3: table3,
-    partitionTable4: table4,
-    bootSignature: BootSignature([data[0x01FE], data[0x01FF]]),
-  )
-
-proc isInvalidPartition*(t: PartitionTable): bool =
-  return if t.sectorCount == 0: true else: false
+proc getFirstByteOfPartition*(t: PartitionTable): uint64 =
+  return uint64(t.firstSectorLBA) * uint64(SECTOR_SIZE)
