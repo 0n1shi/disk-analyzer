@@ -16,11 +16,11 @@ const OldInodeSize = 128
 type BootBlock* = array[0x400, char]
 
 type Ext2SuperBlock* {.packed.} = object
-  inodeCount*                       : uint32
-  blockCount*                       : uint32
-  reservedBlockCount*               : uint32
-  freeBlockCount*                   : uint32
-  freeInodeCount*                   : uint32
+  inodesCount*                      : uint32
+  blocksCount*                      : uint32
+  reservedBlocksCount*              : uint32
+  freeBlocksCount*                  : uint32
+  freeInodesCount*                  : uint32
   firstDataBlock*                   : uint32
   blockSize*                        : uint32
   flagmentSize*                     : uint32
@@ -68,3 +68,12 @@ type Ext2SuperBlock* {.packed.} = object
   firstMetaBlockGroup*              : uint32
   reservedPadding*                  : array[190, uint32]
 
+type Ext2GroupDescriptor* {.packed.} = object
+  blocksBitmapBlock     : uint32
+  inodesBitmapBlock     : uint32
+  inodesTableBlock      : uint32
+  freeBlocksCount       : uint16
+  freeInodesCount       : uint16
+  usedDirectoriesCount  : uint16
+  padding               : uint16
+  reserved              : array[3, uint32]
