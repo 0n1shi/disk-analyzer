@@ -13,7 +13,9 @@ type RevisionLevels = enum
 
 const OldInodeSize = 128
 
-type BootBlock* = array[0x400, char]
+const BLOCK_SIZE* = 0x400
+
+type BootBlock* = array[BLOCK_SIZE, char]
 
 type Ext2SuperBlock* {.packed.} = object
   inodesCount*                      : uint32
@@ -22,8 +24,8 @@ type Ext2SuperBlock* {.packed.} = object
   freeBlocksCount*                  : uint32
   freeInodesCount*                  : uint32
   firstDataBlock*                   : uint32
-  blockSize*                        : uint32
-  flagmentSize*                     : uint32
+  blockSize*                        : uint32 # BLOCK_SIZE << x
+  flagmentSize*                     : uint32 # BLOCK_SIZE << x
   blocksPerGroup*                   : uint32
   fragmentsPerGroup*                : uint32
   inodesPerGroup*                   : uint32
@@ -68,12 +70,15 @@ type Ext2SuperBlock* {.packed.} = object
   firstMetaBlockGroup*              : uint32
   reservedPadding*                  : array[190, uint32]
 
-type Ext2GroupDescriptor* {.packed.} = object
-  blocksBitmapBlock     : uint32
-  inodesBitmapBlock     : uint32
-  inodesTableBlock      : uint32
-  freeBlocksCount       : uint16
-  freeInodesCount       : uint16
-  usedDirectoriesCount  : uint16
-  padding               : uint16
-  reserved              : array[3, uint32]
+type 
+  Ext2GroupDescriptor* {.packed.} = object
+    blocksBitmapBlock*    : uint32
+    inodesBitmapBlock*    : uint32
+    inodesTableBlock*     : uint32
+    freeBlocksCount*      : uint16
+    freeInodesCount*      : uint16
+    usedDirectoriesCount* : uint16
+    padding*              : uint16
+    reserved*             : array[3, uint32]
+
+  Ext2GroupDescriptorList* = array[128, Ext2GroupDescriptor]
