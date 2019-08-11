@@ -70,17 +70,18 @@ type Ext2SuperBlock* {.packed.} = object
   firstMetaBlockGroup*              : uint32
   reservedPadding*                  : array[190, uint32]
 
-type 
-  Ext2GroupDescriptor* {.packed.} = object
-    blocksBitmapBlock*    : uint32
-    inodesBitmapBlock*    : uint32
-    inodesTableBlock*     : uint32
-    freeBlocksCount*      : uint16
-    freeInodesCount*      : uint16
-    usedDirectoriesCount* : uint16
-    padding*              : uint16
-    reserved*             : array[3, uint32]
+type Ext2GroupDescriptor* {.packed.} = object
+  blocksBitmapBlock*    : uint32
+  inodesBitmapBlock*    : uint32
+  inodesTableBlock*     : uint32
+  freeBlocksCount*      : uint16
+  freeInodesCount*      : uint16
+  usedDirectoriesCount* : uint16
+  padding*              : uint16
+  reserved*             : array[3, uint32]
 const Ext2GroupDescriptorSize* = 32
 
 type BlockBitMap* = seq[uint8]
+type InodeBitMap* = seq[uint8]
 
+type

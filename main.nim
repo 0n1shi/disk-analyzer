@@ -31,7 +31,7 @@ echo "" # new line
 # partition table 1
 if isValidPartition(mbRecord.partitionTable1):
   # get start of partition
-  echo "partition table 1"
+  echo "partition table 1 (superblock)"
   let firstSector = getFirstByteOfPartition(mbRecord.partitionTable1)
 
   # go to first sector in the partition
@@ -53,11 +53,11 @@ if isValidPartition(mbRecord.partitionTable1):
   
   # display ext super block
   let blockSize = BLOCK_SIZE_BASE shl ext2SuperBlock.blockSize
-  echo "* number of inodes: " & $ext2SuperBlock.inodesCount
-  echo "* number of blocks: " & $ext2SuperBlock.blocksCount
-  echo "* size of block: " & $blockSize
-  echo "* magic signature: 0x" & $int(ext2SuperBlock.magicSignature).toHex(4)
-  echo "* last mounted path: " & toString(ext2SuperBlock.lastMountedDirectory)
+  echo "  - number of inodes: " & $ext2SuperBlock.inodesCount
+  echo "  - number of blocks: " & $ext2SuperBlock.blocksCount
+  echo "  - size of block: " & $blockSize
+  echo "  - magic signature: 0x" & $int(ext2SuperBlock.magicSignature).toHex(4)
+  echo "  - last mounted path: " & toString(ext2SuperBlock.lastMountedDirectory)
   echo "" # new line
 
   # go to first block of group descripor table
@@ -77,23 +77,52 @@ if isValidPartition(mbRecord.partitionTable1):
       var ext2GroupDescriptorSizeBuffer : array[Ext2GroupDescriptorSize, uint8]
       ext2GroupDescriptorList.add(toGroupDescriptor(buffer[bufferIndex..lastBufferIndex]))
   
-  # display group descriptor table
+  # display block group descriptor table
+  echo "  - block group descriptor table"
   for i, item in ext2GroupDescriptorList.pairs:
     if item.freeBlocksCount == 0:
       break
-    echo "group no." & $i
-    echo "  * free blocks count: " & $item.freeBlocksCount
-    echo "  * free inodes count: " & $item.freeInodesCount
-    echo "  * used dirs count: " & $item.usedDirectoriesCount
+    echo "    group no." & $i
+    echo "      - free blocks count: " & $item.freeBlocksCount
+    echo "      - free inodes count: " & $item.freeInodesCount
+    echo "      - used dirs count: " & $item.usedDirectoriesCount
+  echo "" # newline
 
-  # read block bit map
+  # read block bitmap
   var blockBitmap: BlockBitMap 
-  readCount = read(fd, blockBitmap.addr, sizeof(blockSize))
-  if readCount < 0:
-    exitWithErrorMsg("failed to read file")
-  
-  # display block bit map
-  for i in 0..<blockSize/16:
-    echo "0x"
+  for i in 0..<int(blockSize/BLOCK_SIZE_BASE):
+    var buffer : array[BLOCK_SIZE_BASE, uint8]
+    readCount = read(fd, buffer.addr, BLOCK_SIZE_BASE)
+    for j in 0..<BLOCK_SIZE_BASE:
+      blockBitmap.add(buffer[j])
+
+  # display block bitmap
+  echo "    - block bitmap"
+  for i in 0..<int(blockSize/16):
+    let base = i * 16
+    var outputStr = "      0x" & base.toHex(2) & " "
     for j in 0..<16:
-      blockBitmap
+      outputStr &= int(blockBitmap[base + j]).toHex(2)
+      if j mod 2 == 1:
+        outputStr &= " "
+    echo outputStr
+  echo "" # new line
+
+  # read inode bitmap
+  var inodeBitmap: InodeBitMap 
+  for i in 0..<int(blockSize/BLOCK_SIZE_BASE):
+    var buffer : array[BLOCK_SIZE_BASE, uint8]
+    readCount = read(fd, buffer.addr, BLOCK_SIZE_BASE)
+    for j in 0..<BLOCK_SIZE_BASE:
+      inodeBitmap.add(buffer[j])
+
+  # display inode bitmap
+  echo "    - inode bitmap"
+  for i in 0..<int(blockSize/16):
+    let base = i * 16
+    var outputStr = "      0x" & base.toHex(2) & " "
+    for j in 0..<16:
+      outputStr &= int(inodeBitmap[base + j]).toHex(2)
+      if j mod 2 == 1:
+        outputStr &= " "
+    echo outputStr
