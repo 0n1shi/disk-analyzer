@@ -5,3 +5,5 @@ var ext2SuperBlock: Ext2SuperBlock
 var mbRecord: MasterBootRecord
 
 echo sizeof(ext2SuperBlock)
+
+echo sizeof(Ext2Inode)
