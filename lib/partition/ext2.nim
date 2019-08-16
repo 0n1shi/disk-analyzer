@@ -1,4 +1,4 @@
-import strutils
+import strutils, tables
 
 type EXT2_OS = enum
   Linux       = 0
@@ -79,35 +79,36 @@ type Ext2GroupDescriptor* {.packed.} = object
   reserved*             : array[3, uint32]
 const Ext2GroupDescriptorSize* = 32
 
-type BlockBitMap* = seq[uint8]
+type BlockBitMap* = seq[uint8] # 0: Free/Available, 1: Used
 type InodeBitMap* = seq[uint8]
 
 type PointersToBlocks* = array[15, uint32]
 
 type Ext2Inode* {.packed.} = object
-  fileMode          : uint16
-  uid               : uint16 # low 16 bit of owner id
-  sizeInBytes       : uint32
-  accessTime        : uint32
-  creationTime      : uint32
-  modificationTime  : uint32
-  deletionTime      : uint32
-  gid               : uint16 # low 16 bit of group id
-  linksCount        : uint16
-  blocksCount       : uint32
-  fileFlags         : uint32
-  reserved          : uint32 # OS dependent
-  pointersToBlocks  : PointersToBlocks
-  fileVersion       : uint32
-  fileAcl           : uint32
-  DirectoryAcl      : uint32
-  fragmentAddress   : uint32
-  fragmentNumber    : uint8 # OS dependent
-  fragmentSize      : uint8 # OS dependent
-  padding           : uint16 # OS dependent
-  uidHigh           : uint16 # OS dependent
-  gidHigh           : uint16 # OS dependent
-  reserved2         : uint32 # OS dependent
+  fileMode*           : uint16
+  uid*                : uint16 # low 16 bit of owner id
+  sizeInBytes*        : uint32
+  accessTime*         : uint32
+  creationTime*       : uint32
+  modificationTime*   : uint32
+  deletionTime*       : uint32
+  gid*                : uint16 # low 16 bit of group id
+  linksCount*         : uint16
+  blocksCount*        : uint32
+  fileFlags*          : uint32
+  reserved*           : uint32 # OS dependent
+  pointersToBlocks*   : PointersToBlocks
+  fileVersion*        : uint32
+  fileAcl*            : uint32
+  DirectoryAcl*       : uint32
+  fragmentAddress*    : uint32
+  fragmentNumber*     : uint8 # OS dependent
+  fragmentSize*       : uint8 # OS dependent
+  padding*            : uint16 # OS dependent
+  uidHigh*            : uint16 # OS dependent
+  gidHigh*            : uint16 # OS dependent
+  reserved2*          : uint32 # OS dependent
+let Ext2InodeSize* = sizeof(Ext2Inode)
 
 const
   EXT2_BAD_INO          = 1 # bad blocks inode
@@ -120,27 +121,50 @@ const
 # values for Ext2Inode.fileMode
 const
   # -- file format --
-  EXT2_S_IFSOCK = 0xC000  # socket
-  EXT2_S_IFLNK  = 0xA000  # symbolic link
-  EXT2_S_IFREG  = 0x8000  # regular file
-  EXT2_S_IFBLK  = 0x6000  # block device
-  EXT2_S_IFDIR  = 0x4000  # directory
-  EXT2_S_IFCHR  = 0x2000  # character device
-  EXT2_S_IFIFO  = 0x1000  # fifo
+  EXT2_S_IFSOCK* = 0xC000  # socket
+  EXT2_S_IFLNK*  = 0xA000  # symbolic link
+  EXT2_S_IFREG*  = 0x8000  # regular file
+  EXT2_S_IFBLK*  = 0x6000  # block device
+  EXT2_S_IFDIR*  = 0x4000  # directory
+  EXT2_S_IFCHR*  = 0x2000  # character device
+  EXT2_S_IFIFO*  = 0x1000  # fifo
   # -- process execution user/group override --
-  EXT2_S_ISUID  = 0x0800  # Set process User ID
-  EXT2_S_ISGID  = 0x0400  # Set process Group ID
-  EXT2_S_ISVTX  = 0x0200  # sticky bit
+  EXT2_S_ISUID*  = 0x0800  # Set process User ID
+  EXT2_S_ISGID*  = 0x0400  # Set process Group ID
+  EXT2_S_ISVTX*  = 0x0200  # sticky bit
   # -- access rights --
-  EXT2_S_IRUSR  = 0x0100  # user read
-  EXT2_S_IWUSR  = 0x0080  # user write
-  EXT2_S_IXUSR  = 0x0040  # user execute
-  EXT2_S_IRGRP  = 0x0020  # group read
-  EXT2_S_IWGRP  = 0x0010  # group write
-  EXT2_S_IXGRP  = 0x0008  # group execute
-  EXT2_S_IROTH  = 0x0004  # others read
-  EXT2_S_IWOTH  = 0x0002  # others write
-  EXT2_S_IXOTH  = 0x0001  # others execute
+  EXT2_S_IRUSR*  = 0x0100  # user read
+  EXT2_S_IWUSR*  = 0x0080  # user write
+  EXT2_S_IXUSR*  = 0x0040  # user execute
+  EXT2_S_IRGRP*  = 0x0020  # group read
+  EXT2_S_IWGRP*  = 0x0010  # group write
+  EXT2_S_IXGRP*  = 0x0008  # group execute
+  EXT2_S_IROTH*  = 0x0004  # others read
+  EXT2_S_IWOTH*  = 0x0002  # others write
+  EXT2_S_IXOTH*  = 0x0001  # others execute
+  fileModeTable* = {
+    # -- file format --
+    0xC000 : "socket",
+    0xA000 : "symbolic link",
+    0x8000 : "regular file",
+    0x6000 : "block device",
+    0x4000 : "directory",
+    0x2000 : "character device",
+    0x1000 : "fifo",
+    # -- process execution user/group override --
+    0x0800 : "Set process User ID",
+    0x0400 : "Set process Group ID",
+    0x0200 : "sticky bit",
+    # -- access rights --
+    0x0100 : "user read",
+    0x0080 : "user write",
+    0x0040 : "user execute",
+    0x0020 : "group read",
+    0x0010 : "group write",
+    0x0008 : "group execute",
+    0x0004 : "others read",
+    0x0002 : "others write",
+  }
 
 # values for Ext2Inode.fileFlags
 const
@@ -163,3 +187,5 @@ const
   EXT2_IMAGIC_FL        = 0x00002000  # AFS directory
   EXT3_JOURNAL_DATA_FL  = 0x00004000  # journal file data
   EXT2_RESERVED_FL      = 0x80000000  # reserved for ext2 library
+
+const inodeTableBlockCount* = 214

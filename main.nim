@@ -93,6 +93,8 @@ if isValidPartition(mbRecord.partitionTable1):
   for i in 0..<int(blockSize/BLOCK_SIZE_BASE):
     var buffer : array[BLOCK_SIZE_BASE, uint8]
     readCount = read(fd, buffer.addr, BLOCK_SIZE_BASE)
+    if readCount < 0:
+      exitWithErrorMsg("failed to read block bitmap")
     for j in 0..<BLOCK_SIZE_BASE:
       blockBitmap.add(buffer[j])
 
@@ -110,15 +112,17 @@ if isValidPartition(mbRecord.partitionTable1):
 
   # read inode bitmap
   var inodeBitmap: InodeBitMap 
-  for i in 0..<int(blockSize/BLOCK_SIZE_BASE):
+  for i in 0..<blockSize div BLOCK_SIZE_BASE:
     var buffer : array[BLOCK_SIZE_BASE, uint8]
     readCount = read(fd, buffer.addr, BLOCK_SIZE_BASE)
+    if readCount < 0:
+      exitWithErrorMsg("failed to read inode bitmap")
     for j in 0..<BLOCK_SIZE_BASE:
       inodeBitmap.add(buffer[j])
 
   # display inode bitmap
   echo "    - inode bitmap"
-  for i in 0..<int(blockSize/16):
+  for i in 0..<blockSize div 16:
     let base = i * 16
     var outputStr = "      0x" & base.toHex(2) & " "
     for j in 0..<16:
@@ -126,3 +130,26 @@ if isValidPartition(mbRecord.partitionTable1):
       if j mod 2 == 1:
         outputStr &= " "
     echo outputStr
+  
+  # read inode table
+  var inodeTable : seq[Ext2Inode]
+  for i in 0..<inodeTableBlockCount:
+    for j in 0..<(blockSize div Ext2InodeSize):
+      var ext2Inode : Ext2Inode
+      readCount = read(fd, ext2Inode.addr, Ext2InodeSize)
+      if readCount < 0:
+        exitWithErrorMsg("failed to read inode table")
+      inodeTable.add(ext2Inode)
+  
+  # display inodes
+  echo "    - inode table"
+  for i in 0..<len(inodeTable):
+    let inode = inodeTable[i]
+    let mode = int(inode.fileMode)
+    if isRegularFile(mode):
+      echo "      - No." & $i
+      echo "        - file mode: " & displayFileMode(mode)
+      echo "        - uid : " & $((inode.uidHigh shl 16)  or inode.uid)
+      echo "        - access time : " & $inode.accessTime
+      echo "        - creation time : " & $inode.creationTime
+      echo "        - link count : " & $inode.linksCount
