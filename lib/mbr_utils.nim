@@ -1,7 +1,6 @@
 import os, strformat, strutils
 
-import mbr
-import ../../utils
+import mbr, sector, partition
 
 proc displayBootStrapCode(c: BootStrapCode) =
   echo "boot strap code:\n  (skip)" # todo

@@ -44,7 +44,7 @@ type Ext2SuperBlock* {.packed.} = object
   
   firstNonReservedInode*            : uint32
   sizeOfInodeStructure*             : uint16
-  blockGroupOfThisSuperBlock*       : uint16
+  numberOfBlockGroup*               : uint16
   compatibleFeatureSet*             : uint32
   incompatibleFeatureSet*           : uint32
   readonlyCompatibleFeatureSet*     : uint32
@@ -68,6 +68,9 @@ type Ext2SuperBlock* {.packed.} = object
   firstMetaBlockGroup*              : uint32
   reservedPadding*                  : array[190, uint32]
 
+proc blockGroupCount*(super: Ext2SuperBlock): int =
+  return 1 + ((int(super.blocksCount) - 1) div int(super.blocksPerGroup))
+
 type Ext2GroupDescriptor* {.packed.} = object
   blocksBitmapBlock*    : uint32
   inodesBitmapBlock*    : uint32
@@ -79,8 +82,17 @@ type Ext2GroupDescriptor* {.packed.} = object
   reserved*             : array[3, uint32]
 const Ext2GroupDescriptorSize* = 32
 
+proc blockDescriptorTableSize*(blockGroupCount: int): int =
+  return int(blockGroupCount) * Ext2GroupDescriptorSize
+
 type BlockBitMap* = seq[uint8] # 0: Free/Available, 1: Used
 type InodeBitMap* = seq[uint8]
+
+proc isTheInodeUsed*(i: int, map: InodeBitMap): bool =
+  let index = i div 8
+  let shift = i mod 8
+  var filter = 0x01
+  return (map[index] and uint8(filter shl shift)) > 0'u8
 
 type PointersToBlocks* = array[15, uint32]
 
@@ -111,12 +123,12 @@ type Ext2Inode* {.packed.} = object
 let Ext2InodeSize* = sizeof(Ext2Inode)
 
 const
-  EXT2_BAD_INO          = 1 # bad blocks inode
-  EXT2_ROOT_INO         = 2 # root directory inode
-  EXT2_ACL_IDX_INO      = 3 # ACL index inode (deprecated?)
-  EXT2_ACL_DATA_INO     = 4 # ACL data inode (deprecated?)
-  EXT2_BOOT_LOADER_INO  = 5 # boot loader inode
-  EXT2_UNDEL_DIR_INO    = 6 # undelete directory inode
+  EXT2_BAD_INO*          = 1 # bad blocks inode
+  EXT2_ROOT_INO*         = 2 # root directory inode
+  EXT2_ACL_IDX_INO*      = 3 # ACL index inode (deprecated?)
+  EXT2_ACL_DATA_INO*     = 4 # ACL data inode (deprecated?)
+  EXT2_BOOT_LOADER_INO*  = 5 # boot loader inode
+  EXT2_UNDEL_DIR_INO*    = 6 # undelete directory inode
 
 # values for Ext2Inode.fileMode
 const
@@ -168,24 +180,65 @@ const
 
 # values for Ext2Inode.fileFlags
 const
-  EXT2_SECRM_FL         = 0x00000001  # secure deletion
-  EXT2_UNRM_FL          = 0x00000002  # record for undelete
-  EXT2_COMPR_FL         = 0x00000004  # compressed file
-  EXT2_SYNC_FL          = 0x00000008  # synchronous updates
-  EXT2_IMMUTABLE_FL     = 0x00000010  # immutable file
-  EXT2_APPEND_FL        = 0x00000020  # append only
-  EXT2_NODUMP_FL        = 0x00000040  # do not dump/delete file
-  EXT2_NOATIME_FL       = 0x00000080  # do not update .i_atime
-  # -- Reserved for compression usage --
-  EXT2_DIRTY_FL         = 0x00000100  # Dirty (modified)
-  EXT2_COMPRBLK_FL      = 0x00000200  # compressed blocks
-  EXT2_NOCOMPR_FL       = 0x00000400  # access raw compressed data
-  EXT2_ECOMPR_FL        = 0x00000800  # compression error
+  EXT2_SECRM_FL*         = 0x00000001'u32  # secure deletion
+  EXT2_UNRM_FL*          = 0x00000002'u32  # record for undelete
+  EXT2_COMPR_FL*         = 0x00000004'u32  # compressed file
+  EXT2_SYNC_FL*          = 0x00000008'u32  # synchronous updates
+  EXT2_IMMUTABLE_FL*     = 0x00000010'u32  # immutable file
+  EXT2_APPEND_FL*        = 0x00000020'u32  # append only
+  EXT2_NODUMP_FL*        = 0x00000040'u32  # do not dump/delete file
+  EXT2_NOATIME_FL*       = 0x00000080'u32  # do not update .i_atime
+  # -- Reserved for compression usage --c
+  EXT2_DIRTY_FL*         = 0x00000100'u32  # Dirty (modified)
+  EXT2_COMPRBLK_FL*      = 0x00000200'u32  # compressed blocks
+  EXT2_NOCOMPR_FL*       = 0x00000400'u32  # access raw compressed data
+  EXT2_ECOMPR_FL*        = 0x00000800'u32  # compression error
   # -- End of compression flags --
-  EXT2_BTREE_FL         = 0x00001000  # b-tree format directory
-  EXT2_INDEX_FL         = 0x00001000  # hash indexed directory
-  EXT2_IMAGIC_FL        = 0x00002000  # AFS directory
-  EXT3_JOURNAL_DATA_FL  = 0x00004000  # journal file data
-  EXT2_RESERVED_FL      = 0x80000000  # reserved for ext2 library
+  EXT2_BTREE_FL*         = 0x00001000'u32  # b-tree format directory
+  EXT2_INDEX_FL*         = 0x00001000'u32  # hash indexed directory
+  EXT2_IMAGIC_FL*        = 0x00002000'u32  # AFS directory
+  EXT3_JOURNAL_DATA_FL*  = 0x00004000'u32  # journal file data
+  EXT2_RESERVED_FL*      = 0x80000000'u32  # reserved for ext2 library
+  fileFlagTable* = {
+    0x00000001'u32 : "secure deletion",
+    0x00000002'u32 : "record for undelete",
+    0x00000004'u32 : "compressed file",
+    0x00000008'u32 : "synchronous updates",
+    0x00000010'u32 : "immutable file",
+    0x00000020'u32 : "append only",
+    0x00000040'u32 : "do not dump/delete file",
+    0x00000080'u32 : "do not update .i_atime",
+    # -- Reserved for compression usage --c
+    0x00000100'u32 : "Dirty (modified)",
+    0x00000200'u32 : "compressed blocks",
+    0x00000400'u32 : "access raw compressed data",
+    0x00000800'u32 : "compression error",
+    # -- End of compression flags --
+    0x00001000'u32 : "b-tree format directory",
+    0x00001000'u32 : "hash indexed directory",
+    0x00002000'u32 : "AFS directory",
+    0x00004000'u32 : "journal file data",
+    0x80000000'u32 : "reserved for ext2 library",
+  }
 
 const inodeTableBlockCount* = 214
+
+proc isTheMode(mode: int, fileMode: int): bool =
+  return (mode and fileMode) > 0
+
+proc isTheFlag(flag: uint32, inodeFlag: uint32): bool =
+  return (flag and inodeFlag) > uint32(0)
+
+proc isRegularFile*(fileMode: int): bool =
+  return isTheMode(EXT2_S_IFREG, fileMode)
+
+proc isDirectory*(fileMode: int): bool =
+  return isTheMode(EXT2_S_IFDIR, fileMode)
+
+proc isSocketFile*(fileMode: int): bool =
+    return isTheMode(EXT2_S_IFSOCK, fileMode)
+
+proc isReserved*(fileFlag: uint32): bool =
+  return isTheFlag(EXT2_RESERVED_FL, fileFlag)
+
+const EXT2_NAME_LEN = 255

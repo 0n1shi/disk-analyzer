@@ -1,9 +1,1 @@
-import ../lib/partition/ext2
-import ../lib/mbr/mbr
-
-var ext2SuperBlock: Ext2SuperBlock
-var mbRecord: MasterBootRecord
-
-echo sizeof(ext2SuperBlock)
-
-echo sizeof(Ext2Inode)
+echo 1536 div 1024

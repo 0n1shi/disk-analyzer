@@ -1,4 +1,9 @@
+import posix
+
 import ext2
+
+import partition
+import ../utils
 
 proc toGroupDescriptor*(data: seq[uint8]): Ext2GroupDescriptor =
   var buffer : array[Ext2GroupDescriptorSize, uint8]
@@ -17,6 +22,3 @@ proc displayFileMode*(mode: int): string =
       else:
         message = message & " / " & msg
   return message
-
-proc isTheMode*(mode: int): bool =
-  return (mode and EXT2_S_IFREG) > 0
