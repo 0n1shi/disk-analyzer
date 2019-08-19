@@ -7,6 +7,7 @@ import lib/mbr_utils
 import lib/partition
 import lib/ext2
 import lib/ext2_utils
+import lib/dir
 import utils
 
 if paramCount() < 1:
@@ -103,7 +104,7 @@ if isValidPartition(mbRecord.partitionTable1):
     var hasSuperBlock = false
     if startBlock != int(desc.blocksBitmapBlock):
       hasSuperBlock = true # スーパーブロックが存在する場合にはグループディスクリプタ及びGDT予約ブロックも存在する
-    
+    let dataBlock = $(int(desc.inodesTableBlock) + inodeBlocksPerGroup)
     echo "    no." & $index & " (" & $(startBlock) & " ~ " & $(endBlock) & "):"
     if hasSuperBlock:
       if isPrimaryBlock:
@@ -115,12 +116,15 @@ if isValidPartition(mbRecord.partitionTable1):
     echo "      block bitmap block: " & $desc.blocksBitmapBlock
     echo "      inodes bitmap block: " & $desc.inodesBitmapBlock
     echo "      inodes table block: " & $desc.inodesTableBlock
+    echo "      data block: " & $dataBlock
     echo "      free blocks count: " & $desc.freeBlocksCount
     echo "      free inodes count: " & $desc.freeInodesCount
     echo "      used dirs count: " & $desc.usedDirectoriesCount
   echo ""
   
   # グループディスクリプタテーブルから各グループ内のブロックビットマップ、inodeビットマップ及びinodeテーブルを表示
+  var rootDirDataBlock: int
+  var sizeInBytes: int
   for index, desc in ext2GroupDescriptorList.pairs:
     # ブロックグループの末尾まで表示が完了している
     if index >= numberOfBlockGroup:
@@ -183,8 +187,6 @@ if isValidPartition(mbRecord.partitionTable1):
       echo outputStr
     echo ""
 
-    echo getCurrentBlockNumber(fd, partitionFirstSector, blockSize)
-
     # inodeテーブルの読み込み
     var inodeTable : seq[Ext2Inode]
     for i in 0..<inodeBlocksPerGroup:
@@ -207,76 +209,36 @@ if isValidPartition(mbRecord.partitionTable1):
       echo "        - creation time : " & $inode.creationTime
       echo "        - link count : " & $inode.linksCount
       echo "        - first data block : " & $inode.pointersToBlocks[0]
+      if i == 1:
+        rootDirDataBlock = int(inode.pointersToBlocks[0])
+        sizeInBytes = int(inode.sizeInBytes)
       if i >= 10:
         break
     echo "" # newline
     
-    break # ブロックグループ0のみを対象とする
+    break # ブロックグループ0のみを表示対象とする
+
+  moveBlockNumber(fd, partitionFirstSector, blockSize, rootDirDataBlock)
+
+  var totalSize = 0
+  while totalSize < sizeInBytes:
+    var dir: Ext2DirEntry
+    readCount = read(fd, dir.addr, sizeof(Ext2DirEntry))
+    if readCount == -1:
+      exitWithErrorMsg("failed to read inode table")
+    
+    echo "inodeNumber: " & $dir.inodeNumber
+    echo "entryLength: " & $dir.entryLength
+    echo "nameLength: " & $dir.nameLength
+    echo "fileType: " & fileTypeStr[dir.fileType]
+
+    var fileName: dirEntryFileName
+    let nameLength = int(dir.entryLength) - sizeof(Ext2DirEntry)
+    readCount = read(fd, fileName.addr, nameLength)
+    if readCount == -1:
+      exitWithErrorMsg("failed to read inode table")
+    echo "fileName: " & toString(fileName)
+    totalSize += int(dir.entryLength)
+    echo ""
   
-  # read block bitmap
-  # var blockBitmap: BlockBitMap
-  # for i in 0..<int(blockSize/BLOCK_SIZE_BASE):
-  #   var buffer : array[BLOCK_SIZE_BASE, uint8]
-  #   readCount = read(fd, buffer.addr, BLOCK_SIZE_BASE)
-  #   if readCount < 0:
-  #     exitWithErrorMsg("failed to read block bitmap")
-  #   for j in 0..<BLOCK_SIZE_BASE:
-  #     blockBitmap.add(buffer[j])
-
-  # display block bitmap
-  # echo "    block bitmap"
-  # for i in 0..<int(blockSize/16):
-  #   let base = i * 16
-  #   var outputStr = "      0x" & base.toHex(2) & " "
-  #   for j in 0..<16:
-  #     outputStr &= int(blockBitmap[base + j]).toHex(2)
-  #     if j mod 2 == 1:
-  #       outputStr &= " "
-  #   echo outputStr
-  # echo ""
-
-  # read inode bitmap
-  # var inodeBitmap: InodeBitMap 
-  # for i in 0..<blockSize div BLOCK_SIZE_BASE:
-  #   var buffer : array[BLOCK_SIZE_BASE, uint8]
-  #   readCount = read(fd, buffer.addr, BLOCK_SIZE_BASE)
-  #   if readCount < 0:
-  #     exitWithErrorMsg("failed to read inode bitmap")
-  #   for j in 0..<BLOCK_SIZE_BASE:
-  #     inodeBitmap.add(buffer[j])
-
-  # display inode bitmap
-  # echo "    inode bitmap"
-  # for i in 0..<blockSize div 16:
-  #   let base = i * 16
-  #   var outputStr = "      0x" & base.toHex(2) & " "
-  #   for j in 0..<16:
-  #     outputStr &= int(inodeBitmap[base + j]).toHex(2)
-  #     if j mod 2 == 1:
-  #       outputStr &= " "
-  #   echo outputStr
-  # echo ""
-
-  # read inode table
-  # var inodeTable : seq[Ext2Inode]
-  # for i in 0..<inodeBlocksPerGroup:
-  #   for j in 0..<inodesPerBlock:
-  #     var ext2Inode : Ext2Inode
-  #     readCount = read(fd, ext2Inode.addr, Ext2InodeSize)
-  #     if readCount < 0:
-  #       exitWithErrorMsg("failed to read inode table")
-  #     inodeTable.add(ext2Inode)
-  
-  # display inodes
-  # echo "    inode table (" & $len(inodeTable) & ")"
-  # for i in 0..<len(inodeTable):
-  #   let inode = inodeTable[i]
-  #   let mode = int(inode.fileMode)
-  #   echo "      - inode no." & $(i+1)
-  #   echo "        - file mode: " & displayFileMode(mode)
-  #   echo "        - uid : " & $((inode.uidHigh shl 16)  or inode.uid)
-  #   echo "        - access time : " & $inode.accessTime
-  #   echo "        - creation time : " & $inode.creationTime
-  #   echo "        - link count : " & $inode.linksCount
-  #   echo "        - first data block : " & $inode.pointersToBlocks[0]
-  # echo "" # newline
+  echo totalSize
