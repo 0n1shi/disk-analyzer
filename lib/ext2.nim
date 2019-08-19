@@ -10,6 +10,10 @@ type EXT2_OS = enum
 type RevisionLevels = enum
   Old     = 0
   Dynamic = 1
+const RevisionLevelStr* = [
+  "Old",
+  "Dynamic",
+]
 
 const BLOCK_SIZE_BASE* = 0x400
 
@@ -68,8 +72,10 @@ type Ext2SuperBlock* {.packed.} = object
   firstMetaBlockGroup*              : uint32
   reservedPadding*                  : array[190, uint32]
 
+# ブロックグループの数を算出
+# 全体のブロック数をグループ毎に存在するブロック数で除算
 proc blockGroupCount*(super: Ext2SuperBlock): int =
-  return 1 + ((int(super.blocksCount) - 1) div int(super.blocksPerGroup))
+  return (int(super.blocksCount) - 1) div int(super.blocksPerGroup) + 1
 
 type Ext2GroupDescriptor* {.packed.} = object
   blocksBitmapBlock*    : uint32
@@ -82,8 +88,13 @@ type Ext2GroupDescriptor* {.packed.} = object
   reserved*             : array[3, uint32]
 const Ext2GroupDescriptorSize* = 32
 
+# ブロックグループディスクリプタテーブルのサイズ(byte)を取得
 proc blockDescriptorTableSize*(blockGroupCount: int): int =
-  return int(blockGroupCount) * Ext2GroupDescriptorSize
+  return int(blockGroupCount) * sizeof(Ext2GroupDescriptor)
+
+# ブロックグループディスクリプタテーブルが占めるブロック数
+proc groupDescriptorTableBlockCount*(blockDescriptorTableSize: int, blockSize: int): int =
+  return (int(blockDescriptorTableSize - 1) div blockSize) + 1
 
 type BlockBitMap* = seq[uint8] # 0: Free/Available, 1: Used
 type InodeBitMap* = seq[uint8]
@@ -121,6 +132,14 @@ type Ext2Inode* {.packed.} = object
   gidHigh*            : uint16 # OS dependent
   reserved2*          : uint32 # OS dependent
 let Ext2InodeSize* = sizeof(Ext2Inode)
+
+# 単一のブロックに収まるinodeの個数
+proc inodeCountPerBlock*(blockSize: int): int =
+  return blockSize div sizeof(Ext2Inode)
+
+# グループ毎に存在するinodeの個数
+proc inodeBlocksPerGroup*(inodesPerGroup: uint32, inodesPerBlock: int): int =
+  return int(inodesPerGroup - 1) div inodesPerBlock + 1
 
 const
   EXT2_BAD_INO*          = 1 # bad blocks inode
@@ -242,3 +261,22 @@ proc isReserved*(fileFlag: uint32): bool =
   return isTheFlag(EXT2_RESERVED_FL, fileFlag)
 
 const EXT2_NAME_LEN = 255
+type dirEntryFileName = array[EXT2_NAME_LEN, char]
+
+type fileType = enum
+  EXT2_FT_UNKNOWN   = 0
+  EXT2_FT_REG_FILE  = 1
+  EXT2_FT_DIR       = 2
+  EXT2_FT_CHRDEV    = 3
+  EXT2_FT_BLKDEV    = 4
+  EXT2_FT_FIFO      = 5
+  EXT2_FT_SOCK      = 6
+  EXT2_FT_SYMLINK   = 7
+  EXT2_FT_MAX       = 8
+
+type Ext2DirEntry* = object
+  inodeNumber*  : uint32
+  entryLength*  : uint16
+  nameLength*   : uint8
+  fileType*     : uint8
+  name*         : dirEntryFileName

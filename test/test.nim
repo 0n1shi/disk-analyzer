@@ -1,1 +1,5 @@
-echo 1536 div 1024
+import ../lib/ext2
+
+echo Ext2InodeSize
+
+echo sizeof(Ext2SuperBlock)

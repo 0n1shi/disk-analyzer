@@ -42,8 +42,8 @@ proc displayBootSignature*(s: BootSignature) =
 
 proc displayMasterBootRecord*(r: MasterBootRecord): void =
   displayBootStrapCode(r.code)
-  displayPartionTable(r.partitionTable1, "partition table 1")
-  displayPartionTable(r.partitionTable2, "partition table 2")
-  displayPartionTable(r.partitionTable3, "partition table 3")
-  displayPartionTable(r.partitionTable4, "partition table 4")
+  displayPartionTable(r.partitionTable1, "partition table 1:")
+  displayPartionTable(r.partitionTable2, "partition table 2:")
+  displayPartionTable(r.partitionTable3, "partition table 3:")
+  displayPartionTable(r.partitionTable4, "partition table 4:")
   displayBootSignature(r.bootSignature)
