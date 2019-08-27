@@ -27,3 +27,6 @@ type Ext2DirEntry* = object
   entryLength*  : uint16
   nameLength*   : uint8
   fileType*     : uint8
+
+proc actualNameLength*(len: int): int =
+  return len + (4 - (len mod 4))

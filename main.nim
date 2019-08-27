@@ -221,6 +221,7 @@ if isValidPartition(mbRecord.partitionTable1):
   moveBlockNumber(fd, partitionFirstSector, blockSize, rootDirDataBlock)
 
   var totalSize = 0
+  var count = 0
   while totalSize < sizeInBytes:
     var dir: Ext2DirEntry
     readCount = read(fd, dir.addr, sizeof(Ext2DirEntry))
@@ -233,12 +234,14 @@ if isValidPartition(mbRecord.partitionTable1):
     echo "fileType: " & fileTypeStr[dir.fileType]
 
     var fileName: dirEntryFileName
-    let nameLength = int(dir.entryLength) - sizeof(Ext2DirEntry)
+    let nameLength = actualNameLength(int(dir.nameLength))
     readCount = read(fd, fileName.addr, nameLength)
     if readCount == -1:
       exitWithErrorMsg("failed to read inode table")
     echo "fileName: " & toString(fileName)
-    totalSize += int(dir.entryLength)
+    totalSize += int(dir.nameLength)
+    #totalSize += int(dir.entryLength)
+    count += 1
     echo ""
-  
-  echo totalSize
+    if count > 20:
+      break
